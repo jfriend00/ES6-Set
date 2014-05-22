@@ -1,0 +1,50 @@
+A polyfill for the ES6 Set object, allowing you to use that Set object in any browser from IE7 on up.
+
+When you're running in a newer browser that supports the ES6 Set object, the polyfill will get out of the way
+and you will just be using the native object directly.
+
+Since the ES6 specification is not yet finalized, this implementation is based on the 4-27-2014 draft of the
+ES6 specification.  The test page is compatible with both the polyfill and the native Set implementation in Firefox 29.
+
+This is a polyfill so it test the environment to see if a fully capable Set object is already present.  
+As of 5/21/2014, the only browser that has such a Set object is Firefox.  IE11 contains a Set object,
+but it has no way of iterating the keys of the Set object so the polyfill replaces it to offer full
+functionality.
+
+-----------------
+You only need to read this info below if you're trying to use this polyfill in IE7 and IE8...
+
+If you intend to use this implementation in IE7 or IE8, then you cannot use the ES6-specified .delete() method
+directly because IE7 and IE8 flag the "delete" method as a reserved keyword and any code that tries to use it
+causes a parse error.  This can be worked around by either specifying the delete method as a string as in:
+
+// this works in IE7 and IE8
+mySet["delete"](5);
+
+instead of the more traditional:
+
+// this can't be used in IE7 and IE8
+mySet.delete(5);
+
+Or by using the non-standard .remove() method which has been included in the polyfill for work-around purposes.  
+Of course, the .remove() method does not exist in the ES6 native Set implementation so if you want to
+use .remove() for max compatibility, then your code needs to install .remove() on the native Set
+implementation.  That can be done by including this code to add a .remove() alias:
+
+;(function() {
+    var x = new Set();
+    // if no .remove() method, add one
+    if (!Set.prototype.remove) {
+        // define a .remove() synonym for .delete()
+        // so we can use it in our test code that has to also run in IE8
+        Set.prototype.remove = Set.prototype["delete"];
+    }
+})();
+
+So, if using this extra method definition, then you can just use:
+
+mySet.remove(5);
+
+instead of:
+
+mySet["delete"](5);
