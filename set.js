@@ -40,7 +40,7 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
         }
 
         // decide if we can use Object.defineProperty
-        // include a test for Object.defineProperties (which only IE9 has) to eliminate
+        // include a test for Object.defineProperties (which IE8 does not have) to eliminate
         // using the broken Object.defineProperty in IE8
         var canDefineProperty = Object.defineProperty && Object.defineProperties;
         
@@ -56,13 +56,31 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
                 obj[propName] = value;
             }
         }
+        
+        // for IE8, make .size == ._size
+        // since we don't have a getter for .size
+        function reflectSize(obj) {
+            if (!canDefineProperty) {
+                obj.size = obj._size;
+            }
+        }
 
         // this is the constructor function which will be returned
         function SetConstructor(arg) {
             // set properties in cross-browser way
-            setProperty(this, "data", {}, false, true);         // not enumerable, writable
-            setProperty(this, "size", 0, true, true);           // enumerable and writable
-            setProperty(this, "baseType", "Set", false, false); // not enumerable, not writable
+            setProperty(this, "baseType", "Set", false, false);   // not enumerable, not writeable
+            setProperty(this, "_data", {}, false, true);          // not enumerable, writeable
+            setProperty(this, "_size", 0, false, true);           // not enumerable, writeable
+            if (canDefineProperty) {
+                Object.defineProperty(this, "size", {
+                    enumerable: true,
+                    configurable: false,
+                    get: function() { return this._size;}
+                });
+            } else {
+                // .size is just regular property in IE8
+                this.size = 0;
+            }
             // now add initial data
             if (arg !== undefined && arg !== null) {
                 if (isIterable(arg)) {
@@ -177,22 +195,25 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
         SetConstructor.prototype = {
             add: function(val) {
                 var key = getKey(val, true);
-                if (!hasOwnProp(this.data, key)) {
-                    this.data[key] = val;
-                    ++this.size;
+                if (!hasOwnProp(this._data, key)) {
+                    this._data[key] = val;
+                    ++this._size;
+                    reflectSize(this);
                 }
                 return this;
             },
             clear: function() {
-                this.data = {};
-                this.size = 0;
+                this._data = {};
+                this._size = 0;
+                reflectSize(this);
             },
             // delete has to be in quotes for IE8 - go figure
             "delete": function(val) {
                 var key = getKey(val, false);
-                if (key !== null && hasOwnProp(this.data, key)) {
-                    delete this.data[key];
-                    --this.size;
+                if (key !== null && hasOwnProp(this._data, key)) {
+                    delete this._data[key];
+                    --this._size;
+                    reflectSize(this);
                     return true;
                 }
                 return false;
@@ -223,16 +244,16 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
             has: function(val) {
                 var key = getKey(val, false);
                 if (key === null) return false;
-                return hasOwn.call(this.data, key);
+                return hasOwn.call(this._data, key);
             },
             values: function() {
                 return this.keys();
             },
             keys: function() {
-                return new SetIterator(getKeys(this.data), this.data, "keys");
+                return new SetIterator(getKeys(this._data), this._data, "keys");
             },
             entries: function() {
-                return new SetIterator(getKeys(this.data), this.data, "entries");
+                return new SetIterator(getKeys(this._data), this._data, "entries");
             }
         };
             

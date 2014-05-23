@@ -32,7 +32,6 @@ use .remove() for max compatibility, then your code needs to install .remove() o
 implementation.  That can be done by including this code to add a .remove() alias:
 
 ;(function() {
-    var x = new Set();
     // if no .remove() method, add one
     if (!Set.prototype.remove) {
         // define a .remove() synonym for .delete()

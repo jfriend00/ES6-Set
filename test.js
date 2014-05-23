@@ -12,7 +12,6 @@ if(!Array.isArray) {
 // So that it will also work with the native ES6 Set, we add a .remove() to it
 // that has the same functionality as .delete
 ;(function() {
-    var x = new Set();
     // if no .remove() method, add one
     if (!Set.prototype.remove) {
         // define a .remove() synonym for .delete()
@@ -187,7 +186,11 @@ function runSetTests(elem) {
         // test .size
         verify(".size #1", x.size === 1, true);
         var y = new Set();
-        y.add(1)
+        y.add(1);
+        try {
+            y.size = -1;
+        } catch(e) {}
+        verify(".size can't be set", y.size === 1, true);
         y.remove(1);
         verify(".size() #2", y.size === 0, true);
 
