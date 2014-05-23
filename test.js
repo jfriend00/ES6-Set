@@ -191,6 +191,7 @@ function runSetTests(elem) {
             y.size = -1;
         } catch(e) {}
         verify(".size can't be set", y.size === 1, true);
+        y = new Set([1]);
         y.remove(1);
         verify(".size() #2", y.size === 0, true);
 

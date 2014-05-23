@@ -57,38 +57,47 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
             }
         }
         
-        // for IE8, make .size == ._size
-        // since we don't have a getter for .size
-        function reflectSize(obj) {
-            if (!canDefineProperty) {
-                obj.size = obj._size;
-            }
+        // this private function is used like a private method for setting
+        // the .size property.  It cannot be called from outside this closure.
+        var settable = false;
+        function setSize(obj, val) {
+            settable = true;
+            obj.size = val;
+            settable = false;
         }
 
         // this is the constructor function which will be returned
         function SetConstructor(arg) {
+            // private member variable, not used if IE8
+            var size = 0;
+            
             // set properties in cross-browser way
             setProperty(this, "baseType", "Set", false, false);   // not enumerable, not writeable
             setProperty(this, "_data", {}, false, true);          // not enumerable, writeable
-            setProperty(this, "_size", 0, false, true);           // not enumerable, writeable
             if (canDefineProperty) {
                 Object.defineProperty(this, "size", {
                     enumerable: true,
                     configurable: false,
-                    get: function() { return this._size;}
+                    get: function() { return size;},
+                    set: function(val) {
+                        if (!settable) {throw new Error("Can't set size property on Set object.")}
+                        size = val;
+                    }
                 });
             } else {
                 // .size is just regular property in IE8
                 this.size = 0;
             }
             // now add initial data
+            // per spec make sure it isn't undefined or null
             if (arg !== undefined && arg !== null) {
                 if (isIterable(arg)) {
                     for (var i = 0; i < arg.length; i++) {
                         this.add(arg[i]);
                     }
-                // use our own custom property to avoid instanceof to make cross window type checking work
-                } else if (arg.baseType === "Set") {
+                // also check our own custom property in case
+                // there is cross window code that won't pass instanceof
+                } else if (arg instanceof Set || arg.baseType === "Set") {
                     arg.forEach(function(item) {
                         this.add(item);
                     }, this);
@@ -197,23 +206,20 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
                 var key = getKey(val, true);
                 if (!hasOwnProp(this._data, key)) {
                     this._data[key] = val;
-                    ++this._size;
-                    reflectSize(this);
+                    setSize(this, this.size + 1);
                 }
                 return this;
             },
             clear: function() {
                 this._data = {};
-                this._size = 0;
-                reflectSize(this);
+                setSize(this, 0);
             },
             // delete has to be in quotes for IE8 - go figure
             "delete": function(val) {
                 var key = getKey(val, false);
                 if (key !== null && hasOwnProp(this._data, key)) {
                     delete this._data[key];
-                    --this._size;
-                    reflectSize(this);
+                    setSize(this, this.size - 1);
                     return true;
                 }
                 return false;
