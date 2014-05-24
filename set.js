@@ -22,7 +22,7 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
         
         function isIterable(item) {
             // for purposes of this implementation, an iterable is anything we can iterate with
-            // a class for loop:
+            // a classic for loop:
             //     for (var i = 0; i < item.length; i++)
             // Currently accepts: array, arguments object, HTMLCollection, NodeList
             // and anything that has a .length with a numeric value and, if .length > 0, the first item has a nodeType property
@@ -67,6 +67,7 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
         }
 
         // this is the constructor function which will be returned
+        // from this closure
         function SetConstructor(arg) {
             // private member variable, not used if IE8
             var size = 0;
