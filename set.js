@@ -157,7 +157,7 @@ if (typeof Set === "undefined" || typeof Set.prototype.keys !== "function") {
                     return id;
                 }
             } else {
-                throw "Unsupported type for Set.add()";
+                throw new Error("Unsupported type for Set.add()");
             }
         }
         
